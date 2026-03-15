@@ -12,89 +12,51 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import csv
 import datetime as dt
-import json
 import os
-import re
-import ssl
+import sys
 from pathlib import Path
 from typing import Any
-from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
-from urllib.request import urlopen
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from scripts.utils.http import fetch_json
+from scripts.utils.io import slugify, write_csv, write_json
 
-GNEWS_SEARCH_URL = "https://gnews.io/api/v4/search"
+GNEWS_URL = "https://gnews.io/api/v4/search"
 DEFAULT_QUERIES = ["rail safety", "infrastructure risk"]
 DEFAULT_MAX_RESULTS = 10
-REQUEST_TIMEOUT_SECONDS = 30
+
+NORMALIZED_FIELDS = [
+    "source_name", "title", "description", "content",
+    "url", "image", "published_at", "query",
+]
 
 
-def _slugify(value: str) -> str:
-    value = value.strip().lower()
-    value = re.sub(r"[^a-z0-9]+", "_", value)
-    return value.strip("_") or "query"
-
-
-def _ensure_parent(path: Path) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-
-
-def _extract_articles(
+def _extract(
     *,
     api_key: str,
     query: str,
     max_results: int,
-    insecure_skip_tls_verify: bool = False,
+    insecure_skip_tls_verify: bool,
 ) -> dict[str, Any]:
-    params: dict[str, Any] = {
+    params = {
         "q": query,
         "lang": "en",
         "max": max_results,
         "sortby": "publishedAt",
         "apikey": api_key,
     }
-    url = f"{GNEWS_SEARCH_URL}?{urlencode(params)}"
-    ssl_context = None
-    if insecure_skip_tls_verify:
-        ssl_context = ssl._create_unverified_context()
-
-    try:
-        with urlopen(url, timeout=REQUEST_TIMEOUT_SECONDS, context=ssl_context) as response:
-            status_code = getattr(response, "status", 200)
-            if status_code >= 400:
-                raise RuntimeError(f"GNews request failed with HTTP {status_code}")
-            payload = json.loads(response.read().decode("utf-8"))
-    except HTTPError as exc:
-        if exc.code == 401:
-            raise RuntimeError(
-                "GNews returned 401 Unauthorized. Check GNEWS_API_KEY value."
-            ) from exc
-        if exc.code == 403:
-            raise RuntimeError(
-                "GNews returned 403 Forbidden. Plan/quota/permissions may block this request."
-            ) from exc
-        if exc.code == 429:
-            raise RuntimeError(
-                "GNews returned 429 Too Many Requests. You hit rate limits/quota."
-            ) from exc
-        raise RuntimeError(f"GNews HTTP error: {exc.code}") from exc
-    except URLError as exc:
-        reason = getattr(exc, "reason", None)
-        if isinstance(reason, ssl.SSLCertVerificationError):
-            raise RuntimeError(
-                "TLS certificate verification failed. Retry with "
-                "--insecure-skip-tls-verify as a temporary workaround."
-            ) from exc
-        raise RuntimeError(f"Failed to call GNews over HTTPS: {reason or exc}") from exc
-
+    payload = fetch_json(
+        f"{GNEWS_URL}?{urlencode(params)}",
+        insecure_skip_tls_verify=insecure_skip_tls_verify,
+    )
     if "articles" not in payload:
         raise RuntimeError(f"Unexpected GNews response shape: {payload}")
     return payload
 
 
-def _normalize_article(article: dict[str, Any], query: str) -> dict[str, str]:
+def _normalize(article: dict[str, Any], query: str) -> dict[str, str]:
     source = article.get("source") or {}
     return {
         "source_name": str(source.get("name") or ""),
@@ -108,31 +70,7 @@ def _normalize_article(article: dict[str, Any], query: str) -> dict[str, str]:
     }
 
 
-def _write_raw_json(payload: dict[str, Any], output_path: Path) -> None:
-    _ensure_parent(output_path)
-    with output_path.open("w", encoding="utf-8") as f:
-        json.dump(payload, f, ensure_ascii=False, indent=2)
-
-
-def _write_normalized_csv(rows: list[dict[str, str]], output_path: Path) -> None:
-    _ensure_parent(output_path)
-    fieldnames = [
-        "source_name",
-        "title",
-        "description",
-        "content",
-        "url",
-        "image",
-        "published_at",
-        "query",
-    ]
-    with output_path.open("w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(rows)
-
-
-def _write_profile_markdown(
+def _write_profile(
     *,
     output_path: Path,
     api_call_count: int,
@@ -140,7 +78,7 @@ def _write_profile_markdown(
     total_rows: int,
     status: str,
 ) -> None:
-    _ensure_parent(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     now_iso = dt.datetime.now(dt.timezone.utc).isoformat()
     lines = [
         "# GNews Profiling Note",
@@ -152,59 +90,33 @@ def _write_profile_markdown(
         "",
         "## Query-level counts",
         "",
-    ]
-    for query, count in query_stats:
-        lines.append(f"- `{query}`: {count} article(s)")
-    lines += [
+        *[f"- `{q}`: {n} article(s)" for q, n in query_stats],
         "",
-        "## Comparison comments vs NewsAPI",
+        "## Comparison vs NewsAPI",
         "",
-        "- GNews may return fewer metadata fields than NewsAPI (for example, no author in many cases).",
-        "- GNews uses `max` for result size and `apikey` parameter name, while NewsAPI uses `pageSize` and `apiKey`.",
-        "- Rate limit/plan behavior differs by provider and should be monitored separately.",
+        "- GNews uses `max`/`apikey`; NewsAPI uses `pageSize`/`apiKey`.",
+        "- GNews normalized CSV does not include an `author` field.",
+        "- Rate limit and quota behavior are provider-specific.",
         "",
         "## Rate limit observations",
         "",
-        "- Handle `429` with retry/backoff for larger extraction runs.",
+        "- Implement retry/backoff on HTTP 429 for larger runs.",
     ]
     output_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def parse_args() -> argparse.Namespace:
+def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Extract sample data from GNews.")
-    parser.add_argument(
-        "--api-key",
-        default=os.getenv("GNEWS_API_KEY", ""),
-        help="GNews API key. Defaults to GNEWS_API_KEY env var.",
-    )
-    parser.add_argument(
-        "--query",
-        action="append",
-        dest="queries",
-        help="Query term. Can be passed multiple times. Defaults to two built-in queries.",
-    )
-    parser.add_argument(
-        "--max-results",
-        type=int,
-        default=DEFAULT_MAX_RESULTS,
-        help="Maximum results per query (1-100).",
-    )
-    parser.add_argument(
-        "--min-articles",
-        type=int,
-        default=5,
-        help="Fail if fewer than this many normalized rows are collected.",
-    )
-    parser.add_argument(
-        "--insecure-skip-tls-verify",
-        action="store_true",
-        help="Disable TLS certificate verification temporarily (not recommended for production).",
-    )
+    parser.add_argument("--api-key", default=os.getenv("GNEWS_API_KEY", ""), help="GNews API key.")
+    parser.add_argument("--query", action="append", dest="queries", help="Query term (repeatable).")
+    parser.add_argument("--max-results", type=int, default=DEFAULT_MAX_RESULTS, help="Results per query (1-100).")
+    parser.add_argument("--min-articles", type=int, default=5, help="Minimum expected rows.")
+    parser.add_argument("--insecure-skip-tls-verify", action="store_true", help="Disable TLS verification.")
     return parser.parse_args()
 
 
 def main() -> int:
-    args = parse_args()
+    args = _parse_args()
     if not args.api_key:
         raise SystemExit("Missing API key. Set GNEWS_API_KEY or pass --api-key.")
 
@@ -213,50 +125,45 @@ def main() -> int:
 
     root = Path(__file__).resolve().parents[2]
     raw_dir = root / "data" / "raw" / "gnews"
-    normalized_csv_path = root / "data" / "normalized" / "gnews_sample_v0.csv"
-    profile_md_path = root / "data" / "profiling" / "gnews_profile.md"
+    csv_path = root / "data" / "normalized" / "gnews_sample_v0.csv"
+    profile_path = root / "data" / "profiling" / "gnews_profile.md"
 
     rows: list[dict[str, str]] = []
     query_stats: list[tuple[str, int]] = []
-    api_call_count = 0
+
+    # Capture run timestamp once before the loop.
+    run_ts = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
     for query in queries:
-        payload = _extract_articles(
+        payload = _extract(
             api_key=args.api_key,
             query=query,
             max_results=max_results,
             insecure_skip_tls_verify=args.insecure_skip_tls_verify,
         )
-        api_call_count += 1
-
-        timestamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-        raw_path = raw_dir / f"gnews_{_slugify(query)}_{timestamp}.json"
-        _write_raw_json(payload, raw_path)
+        raw_path = raw_dir / f"gnews_{slugify(query)}_{run_ts}.json"
+        write_json(payload, raw_path)
 
         articles = payload.get("articles", [])
         query_stats.append((query, len(articles)))
-        for article in articles:
-            rows.append(_normalize_article(article, query))
+        rows.extend(_normalize(a, query) for a in articles)
 
-    _write_normalized_csv(rows, normalized_csv_path)
-
+    write_csv(rows, NORMALIZED_FIELDS, csv_path)
     status = "success" if len(rows) >= args.min_articles else "insufficient_rows"
-    _write_profile_markdown(
-        output_path=profile_md_path,
-        api_call_count=api_call_count,
+    _write_profile(
+        output_path=profile_path,
+        api_call_count=len(queries),
         query_stats=query_stats,
         total_rows=len(rows),
         status=status,
     )
 
     if len(rows) < args.min_articles:
-        raise SystemExit(
-            f"Only {len(rows)} rows extracted, expected at least {args.min_articles}."
-        )
+        raise SystemExit(f"Only {len(rows)} rows extracted, expected at least {args.min_articles}.")
 
-    print(f"Saved {len(rows)} normalized rows to {normalized_csv_path}")
-    print(f"Raw JSON files are available under {raw_dir}")
-    print(f"Profiling note saved to {profile_md_path}")
+    print(f"Saved {len(rows)} rows → {csv_path}")
+    print(f"Raw JSON → {raw_dir}")
+    print(f"Profiling → {profile_path}")
     return 0
 
 

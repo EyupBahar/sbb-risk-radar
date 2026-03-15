@@ -9,71 +9,56 @@ Usage:
 
 from __future__ import annotations
 
-import csv
 import hashlib
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from scripts.utils.io import read_csv, write_csv
 
 ROOT = Path(__file__).resolve().parents[2]
 NEWSAPI_CSV = ROOT / "data" / "normalized" / "newsapi_sample_v0.csv"
 GNEWS_CSV = ROOT / "data" / "normalized" / "gnews_sample_v0.csv"
 OUTPUT_CSV = ROOT / "data" / "normalized" / "master" / "master_source_v0.csv"
 
+# Column order matches SBB_Risk_Radar_Master_Source_Template_Normalization.xlsx.
 MASTER_COLUMNS = [
-    "record_id",
-    "batch_id",
-    "source_name",
-    "source_group",
-    "source_type",
-    "record_granularity",
-    "source_url",
-    "document_url",
-    "source_document_id",
-    "title_raw",
-    "summary_raw",
-    "text_raw",
-    "page_reference_raw",
-    "published_at",
-    "retrieved_at",
-    "language",
-    "country_hint",
-    "author_or_org",
-    "section_category",
-    "file_format",
-    "extraction_method",
-    "access_status",
-    "parse_status",
-    "raw_storage_path",
-    "normalized_storage_path",
-    "text_length",
-    "content_hash",
-    "notes",
-    "working_title",
-    "kurzbeschrieb",
-    "quelle",
-    "seitenangabe",
-    "stichwoerter",
-    "datum",
-    "betroffene_konzernziele",
-    "auswirkung",
-    "zeithorizont",
-    "geografische_relevanz",
-    "primaer_betroffene_division",
-    "sekundaer_betroffene_division",
-    "trend",
-    "kommentar",
-    "dedup_cluster_id",
-    "ai_confidence",
-    "relevance_score_sbb",
-    "pipeline_version",
+    "record_id", "batch_id", "source_name", "source_group", "source_type",
+    "record_granularity", "source_url", "document_url", "source_document_id",
+    "title_raw", "summary_raw", "text_raw", "page_reference_raw",
+    "published_at", "retrieved_at", "language", "country_hint", "author_or_org",
+    "section_category", "file_format", "extraction_method", "access_status",
+    "parse_status", "raw_storage_path", "normalized_storage_path",
+    "text_length", "content_hash", "notes", "working_title",
+    # Parallel German fields required by SBB template.
+    "kurzbeschrieb", "quelle", "seitenangabe", "stichwoerter", "datum",
+    "betroffene_konzernziele", "auswirkung", "zeithorizont",
+    "geografische_relevanz", "primaer_betroffene_division",
+    "sekundaer_betroffene_division", "trend", "kommentar",
+    "dedup_cluster_id", "ai_confidence", "relevance_score_sbb", "pipeline_version",
 ]
 
 BATCH_ID = "phase1_wk1"
 PIPELINE_VERSION = "v0"
-RETRIEVED_AT = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+_PROVIDER_SOURCE_URL = {
+    "newsapi": "https://newsapi.org/",
+    "gnews": "https://gnews.io/",
+}
+
+_PROVIDER_RAW_PATH = {
+    "newsapi": "data/raw/newsapi/",
+    "gnews": "data/raw/gnews/",
+}
+
+_PROVIDER_NORMALIZED_PATH = {
+    "newsapi": "data/normalized/newsapi_sample_v0.csv",
+    "gnews": "data/normalized/gnews_sample_v0.csv",
+}
 
 
-def _hash_content(text: str) -> str:
+def _content_hash(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16] if text else ""
 
 
@@ -86,15 +71,12 @@ def _to_master_row(
     title_raw: str,
     summary_raw: str,
     text_raw: str,
-    page_ref: str,
+    query: str,
     published_at: str,
     author_or_org: str,
-    raw_storage_path: str,
-    normalized_storage_path: str,
+    retrieved_at: str,
 ) -> dict[str, str]:
-    text_len = str(len(text_raw)) if text_raw else "0"
-    content_hash = _hash_content(text_raw)
-    source_url = "https://newsapi.org/" if provider == "newsapi" else "https://gnews.io/"
+    h = _content_hash(text_raw)
     return {
         "record_id": record_id,
         "batch_id": BATCH_ID,
@@ -102,34 +84,38 @@ def _to_master_row(
         "source_group": "api",
         "source_type": "article",
         "record_granularity": "item",
-        "source_url": source_url,
-        "document_url": document_url or "",
-        "source_document_id": f"{provider}_{content_hash}",
-        "title_raw": title_raw or "",
-        "summary_raw": summary_raw or "",
-        "text_raw": text_raw or "",
-        "page_reference_raw": page_ref or "",
-        "published_at": published_at or "",
-        "retrieved_at": RETRIEVED_AT,
+        "source_url": _PROVIDER_SOURCE_URL[provider],
+        "document_url": document_url,
+        "source_document_id": f"{provider}_{h}",
+        "title_raw": title_raw,
+        "summary_raw": summary_raw,
+        "text_raw": text_raw,
+        # query is stored as the page-level reference across all three columns.
+        "page_reference_raw": query,
+        "published_at": published_at,
+        "retrieved_at": retrieved_at,
         "language": "en",
         "country_hint": "",
-        "author_or_org": author_or_org or "",
-        "section_category": page_ref or "",
+        "author_or_org": author_or_org,
+        # section_category = query (best available category proxy from API output).
+        "section_category": query,
         "file_format": "json",
         "extraction_method": "api",
         "access_status": "ok",
         "parse_status": "success",
-        "raw_storage_path": raw_storage_path or "",
-        "normalized_storage_path": normalized_storage_path or "",
-        "text_length": text_len,
-        "content_hash": content_hash,
+        "raw_storage_path": _PROVIDER_RAW_PATH[provider],
+        "normalized_storage_path": _PROVIDER_NORMALIZED_PATH[provider],
+        "text_length": str(len(text_raw)),
+        "content_hash": h,
         "notes": "",
-        "working_title": title_raw or "",
-        "kurzbeschrieb": summary_raw or "",
+        # German parallel fields required by SBB template.
+        "working_title": title_raw,
+        "kurzbeschrieb": summary_raw,
         "quelle": publisher_name or provider,
         "seitenangabe": "",
-        "stichwoerter": page_ref or "",
-        "datum": published_at or "",
+        # stichwoerter = query (closest equivalent to keywords from extraction).
+        "stichwoerter": query,
+        "datum": published_at,
         "betroffene_konzernziele": "",
         "auswirkung": "",
         "zeithorizont": "",
@@ -145,61 +131,49 @@ def _to_master_row(
     }
 
 
-def _read_csv(path: Path) -> list[dict[str, str]]:
-    if not path.exists():
-        return []
-    with path.open("r", encoding="utf-8", newline="") as f:
-        return list(csv.DictReader(f))
-
-
 def main() -> int:
-    rows: list[dict[str, str]] = []
-    newsapi_data = _read_csv(NEWSAPI_CSV)
-    gnews_data = _read_csv(GNEWS_CSV)
+    now = datetime.now(timezone.utc)
+    retrieved_at = now.strftime("%Y-%m-%dT%H:%M:%SZ")
+    today = now.strftime("%Y%m%d")
 
-    for i, r in enumerate(newsapi_data, start=1):
-        record_id = f"src_newsapi_{datetime.now(timezone.utc).strftime('%Y%m%d')}_{i:03d}"
-        master = _to_master_row(
-            record_id=record_id,
+    newsapi_rows = read_csv(NEWSAPI_CSV)
+    gnews_rows = read_csv(GNEWS_CSV)
+
+    master_rows: list[dict[str, str]] = []
+
+    for i, r in enumerate(newsapi_rows, start=1):
+        master_rows.append(_to_master_row(
+            record_id=f"src_newsapi_{today}_{i:03d}",
             provider="newsapi",
             publisher_name=r.get("source_name", ""),
             document_url=r.get("url", ""),
             title_raw=r.get("title", ""),
             summary_raw=r.get("description", ""),
             text_raw=r.get("content", ""),
-            page_ref=r.get("query", ""),
+            query=r.get("query", ""),
             published_at=r.get("published_at", ""),
             author_or_org=r.get("author", ""),
-            raw_storage_path="data/raw/newsapi/",
-            normalized_storage_path="data/normalized/newsapi_sample_v0.csv",
-        )
-        rows.append(master)
+            retrieved_at=retrieved_at,
+        ))
 
-    for i, r in enumerate(gnews_data, start=1):
-        record_id = f"src_gnews_{datetime.now(timezone.utc).strftime('%Y%m%d')}_{i:03d}"
-        master = _to_master_row(
-            record_id=record_id,
+    for i, r in enumerate(gnews_rows, start=1):
+        # GNews normalized CSV has no author field; author_or_org is left empty.
+        master_rows.append(_to_master_row(
+            record_id=f"src_gnews_{today}_{i:03d}",
             provider="gnews",
             publisher_name=r.get("source_name", ""),
             document_url=r.get("url", ""),
             title_raw=r.get("title", ""),
             summary_raw=r.get("description", ""),
             text_raw=r.get("content", ""),
-            page_ref=r.get("query", ""),
+            query=r.get("query", ""),
             published_at=r.get("published_at", ""),
             author_or_org="",
-            raw_storage_path="data/raw/gnews/",
-            normalized_storage_path="data/normalized/gnews_sample_v0.csv",
-        )
-        rows.append(master)
+            retrieved_at=retrieved_at,
+        ))
 
-    OUTPUT_CSV.parent.mkdir(parents=True, exist_ok=True)
-    with OUTPUT_CSV.open("w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=MASTER_COLUMNS)
-        writer.writeheader()
-        writer.writerows(rows)
-
-    print(f"Wrote {len(rows)} rows to {OUTPUT_CSV}")
+    write_csv(master_rows, MASTER_COLUMNS, OUTPUT_CSV)
+    print(f"Wrote {len(master_rows)} rows → {OUTPUT_CSV}")
     return 0
 
 
