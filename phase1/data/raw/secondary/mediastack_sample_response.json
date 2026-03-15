@@ -1,0 +1,8 @@
+{
+  "status": "error",
+  "http_status": 403,
+  "url": "https://api.mediastack.com/v1/news?access_key=KEY_OR_PLACEHOLDER&keywords=rail+safety",
+  "provider_response": {
+    "raw_error_body": "error code: 1010"
+  }
+}

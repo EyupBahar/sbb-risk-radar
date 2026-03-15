@@ -1,0 +1,12 @@
+{
+  "status": "error",
+  "http_status": 401,
+  "url": "https://newsdata.io/api/1/news?apikey=KEY_OR_PLACEHOLDER&q=rail+safety",
+  "provider_response": {
+    "status": "error",
+    "results": {
+      "message": "The provided API key is not valid.",
+      "code": "Unauthorized"
+    }
+  }
+}

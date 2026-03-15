@@ -1,11 +1,12 @@
 """
-Extract sample articles from NewsAPI and generate:
-1) Raw JSON files under data/raw/newsapi/
-2) Normalized CSV at data/normalized/newsapi_sample_v0.csv
-3) Profiling note at data/profiling/newsapi_profile.md
+Extract sample articles from GNews and generate:
+1) Raw JSON files under data/raw/gnews/
+2) Normalized CSV at data/normalized/gnews_sample_v0.csv
+3) Profiling note at data/profiling/gnews_profile.md
 
 Usage:
-    python scripts/extractors/extract_newsapi.py --query "rail safety" --query "supply chain risk"
+    GNEWS_API_KEY="<key>" python3 scripts/extractors/extract_gnews.py \
+      --query "rail safety" --query "infrastructure risk"
 """
 
 from __future__ import annotations
@@ -19,13 +20,14 @@ import re
 import ssl
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlencode
 from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode
 from urllib.request import urlopen
 
-NEWSAPI_EVERYTHING_URL = "https://newsapi.org/v2/everything"
+
+GNEWS_SEARCH_URL = "https://gnews.io/api/v4/search"
 DEFAULT_QUERIES = ["rail safety", "infrastructure risk"]
-DEFAULT_PAGE_SIZE = 10
+DEFAULT_MAX_RESULTS = 10
 REQUEST_TIMEOUT_SECONDS = 30
 
 
@@ -43,18 +45,17 @@ def _extract_articles(
     *,
     api_key: str,
     query: str,
-    page_size: int,
+    max_results: int,
     insecure_skip_tls_verify: bool = False,
 ) -> dict[str, Any]:
     params: dict[str, Any] = {
         "q": query,
-        "language": "en",
-        "sortBy": "publishedAt",
-        "pageSize": page_size,
-        "page": 1,
-        "apiKey": api_key,
+        "lang": "en",
+        "max": max_results,
+        "sortby": "publishedAt",
+        "apikey": api_key,
     }
-    url = f"{NEWSAPI_EVERYTHING_URL}?{urlencode(params)}"
+    url = f"{GNEWS_SEARCH_URL}?{urlencode(params)}"
     ssl_context = None
     if insecure_skip_tls_verify:
         ssl_context = ssl._create_unverified_context()
@@ -63,32 +64,33 @@ def _extract_articles(
         with urlopen(url, timeout=REQUEST_TIMEOUT_SECONDS, context=ssl_context) as response:
             status_code = getattr(response, "status", 200)
             if status_code >= 400:
-                raise RuntimeError(f"NewsAPI request failed with HTTP {status_code}")
+                raise RuntimeError(f"GNews request failed with HTTP {status_code}")
             payload = json.loads(response.read().decode("utf-8"))
     except HTTPError as exc:
         if exc.code == 401:
             raise RuntimeError(
-                "NewsAPI returned 401 Unauthorized. "
-                "Use a real NEWSAPI_KEY value (not a placeholder) and verify it is active."
+                "GNews returned 401 Unauthorized. Check GNEWS_API_KEY value."
+            ) from exc
+        if exc.code == 403:
+            raise RuntimeError(
+                "GNews returned 403 Forbidden. Plan/quota/permissions may block this request."
             ) from exc
         if exc.code == 429:
             raise RuntimeError(
-                "NewsAPI returned 429 Too Many Requests. "
-                "You hit rate limits/quota; wait and retry with fewer queries."
+                "GNews returned 429 Too Many Requests. You hit rate limits/quota."
             ) from exc
-        raise RuntimeError(f"NewsAPI HTTP error: {exc.code}") from exc
+        raise RuntimeError(f"GNews HTTP error: {exc.code}") from exc
     except URLError as exc:
         reason = getattr(exc, "reason", None)
         if isinstance(reason, ssl.SSLCertVerificationError):
             raise RuntimeError(
-                "TLS certificate verification failed. "
-                "Retry with --insecure-skip-tls-verify as a temporary workaround."
+                "TLS certificate verification failed. Retry with "
+                "--insecure-skip-tls-verify as a temporary workaround."
             ) from exc
-        raise RuntimeError(
-            f"Failed to call NewsAPI over HTTPS: {reason or exc}"
-        ) from exc
-    if payload.get("status") != "ok":
-        raise RuntimeError(f"NewsAPI returned non-ok response: {payload}")
+        raise RuntimeError(f"Failed to call GNews over HTTPS: {reason or exc}") from exc
+
+    if "articles" not in payload:
+        raise RuntimeError(f"Unexpected GNews response shape: {payload}")
     return payload
 
 
@@ -96,13 +98,13 @@ def _normalize_article(article: dict[str, Any], query: str) -> dict[str, str]:
     source = article.get("source") or {}
     return {
         "source_name": str(source.get("name") or ""),
-        "author": str(article.get("author") or ""),
         "title": str(article.get("title") or ""),
         "description": str(article.get("description") or ""),
+        "content": str(article.get("content") or ""),
         "url": str(article.get("url") or ""),
+        "image": str(article.get("image") or ""),
         "published_at": str(article.get("publishedAt") or ""),
         "query": query,
-        "content": str(article.get("content") or ""),
     }
 
 
@@ -116,13 +118,13 @@ def _write_normalized_csv(rows: list[dict[str, str]], output_path: Path) -> None
     _ensure_parent(output_path)
     fieldnames = [
         "source_name",
-        "author",
         "title",
         "description",
+        "content",
         "url",
+        "image",
         "published_at",
         "query",
-        "content",
     ]
     with output_path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -141,7 +143,7 @@ def _write_profile_markdown(
     _ensure_parent(output_path)
     now_iso = dt.datetime.now(dt.timezone.utc).isoformat()
     lines = [
-        "# NewsAPI Profiling Note",
+        "# GNews Profiling Note",
         "",
         f"- Run timestamp (UTC): {now_iso}",
         f"- API calls executed: {api_call_count}",
@@ -155,25 +157,25 @@ def _write_profile_markdown(
         lines.append(f"- `{query}`: {count} article(s)")
     lines += [
         "",
+        "## Comparison comments vs NewsAPI",
+        "",
+        "- GNews may return fewer metadata fields than NewsAPI (for example, no author in many cases).",
+        "- GNews uses `max` for result size and `apikey` parameter name, while NewsAPI uses `pageSize` and `apiKey`.",
+        "- Rate limit/plan behavior differs by provider and should be monitored separately.",
+        "",
         "## Rate limit observations",
         "",
-        "- NewsAPI free/developer plans are rate-limited and may return HTTP 429 when exceeded.",
-        "- Monitor response headers and HTTP status codes during larger-scale extraction.",
-        "",
-        "## Data quality notes",
-        "",
-        "- Duplicate headlines may appear across closely related queries.",
-        "- Some fields (`author`, `content`) can be null/empty depending on publisher.",
+        "- Handle `429` with retry/backoff for larger extraction runs.",
     ]
     output_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Extract sample data from NewsAPI.")
+    parser = argparse.ArgumentParser(description="Extract sample data from GNews.")
     parser.add_argument(
         "--api-key",
-        default=os.getenv("NEWSAPI_KEY", ""),
-        help="NewsAPI key. Defaults to NEWSAPI_KEY env var.",
+        default=os.getenv("GNEWS_API_KEY", ""),
+        help="GNews API key. Defaults to GNEWS_API_KEY env var.",
     )
     parser.add_argument(
         "--query",
@@ -182,9 +184,9 @@ def parse_args() -> argparse.Namespace:
         help="Query term. Can be passed multiple times. Defaults to two built-in queries.",
     )
     parser.add_argument(
-        "--page-size",
+        "--max-results",
         type=int,
-        default=DEFAULT_PAGE_SIZE,
+        default=DEFAULT_MAX_RESULTS,
         help="Maximum results per query (1-100).",
     )
     parser.add_argument(
@@ -204,15 +206,15 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     if not args.api_key:
-        raise SystemExit("Missing API key. Set NEWSAPI_KEY or pass --api-key.")
+        raise SystemExit("Missing API key. Set GNEWS_API_KEY or pass --api-key.")
 
     queries = args.queries or DEFAULT_QUERIES
-    page_size = max(1, min(args.page_size, 100))
+    max_results = max(1, min(args.max_results, 100))
 
     root = Path(__file__).resolve().parents[2]
-    raw_dir = root / "data" / "raw" / "newsapi"
-    normalized_csv_path = root / "data" / "normalized" / "newsapi_sample_v0.csv"
-    profile_md_path = root / "data" / "profiling" / "newsapi_profile.md"
+    raw_dir = root / "data" / "raw" / "gnews"
+    normalized_csv_path = root / "data" / "normalized" / "gnews_sample_v0.csv"
+    profile_md_path = root / "data" / "profiling" / "gnews_profile.md"
 
     rows: list[dict[str, str]] = []
     query_stats: list[tuple[str, int]] = []
@@ -222,13 +224,13 @@ def main() -> int:
         payload = _extract_articles(
             api_key=args.api_key,
             query=query,
-            page_size=page_size,
+            max_results=max_results,
             insecure_skip_tls_verify=args.insecure_skip_tls_verify,
         )
         api_call_count += 1
 
         timestamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-        raw_path = raw_dir / f"newsapi_{_slugify(query)}_{timestamp}.json"
+        raw_path = raw_dir / f"gnews_{_slugify(query)}_{timestamp}.json"
         _write_raw_json(payload, raw_path)
 
         articles = payload.get("articles", [])

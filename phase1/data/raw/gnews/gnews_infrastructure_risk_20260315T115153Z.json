@@ -1,0 +1,170 @@
+{
+  "information": {
+    "realTimeArticles": {
+      "message": "Real-time news data is only available on paid plans. Free plan has a 12-hour delay. Upgrade your plan here to remove the delay: https://gnews.io/change-plan"
+    }
+  },
+  "totalArticles": 1059,
+  "articles": [
+    {
+      "id": "eddd350662aaa440bc2de55f1abfd736",
+      "title": "Balearic roadworks at risk as Iran conflict drives up tarmac prices",
+      "description": "Local authorities are preparing contingency plans for vital road infrastructure projects. This is because its main ingredient, bitumen, is directly derived from crude oil",
+      "content": "Tarmac's sensitivity to oil market fluctuations is particularly pronounced during crises like the current disruption caused by the closure of the Strait of Hormuz and attacks on Gulf Coast refineries. This is because its main ingredient, bitumen, is ... [2885 chars]",
+      "url": "https://www.majorcadailybulletin.com/news/local/2026/03/14/140899/balearic-roadworks-risk-iran-conflict-drives-tarmac-prices.html",
+      "image": "https://md.gsstatic.es/sfAttachPlugin/social/186797.jpg",
+      "publishedAt": "2026-03-14T08:23:53Z",
+      "lang": "en",
+      "source": {
+        "id": "53145d6e104c81ebd118041fcf32414e",
+        "name": "Majorca Daily Bulletin",
+        "url": "https://www.majorcadailybulletin.com",
+        "country": "es"
+      }
+    },
+    {
+      "id": "e85f46ca9647d7d2021b800412f6a2ef",
+      "title": "US Airstrikes Hit Kharg Island Military Sites; Iran’s ‘Orphan Pearl’ Oil Hub at Risk",
+      "description": "U.S. airstrikes targeting military installations on Iran’s Kharg Island, responsible for up to 95% of the country’s crude exports, have intensified tensions in West Asia and rattled global energy markets. Although oil infrastructure was spared, any disruption to the terminal could push oil prices.",
+      "content": "In a major escalation of the West Asia conflict, U.S. forces carried out heavy bombing raids on Saturday, March 14, targeting military installations on Kharg Island, widely regarded as the most critical node in Iran’s oil export infrastructure.\nThe s... [5047 chars]",
+      "url": "https://www.republicworld.com/business/us-airstrikes-hit-kharg-island-military-sites-irans-orphan-pearl-oil-hub-at-risk",
+      "image": "https://img.republicworld.com/all_images/2026/03/us-airstrikes-targeted-military-installations-on-irans-kharg-island-1773475264219-1280x720.webp",
+      "publishedAt": "2026-03-14T07:31:42Z",
+      "lang": "en",
+      "source": {
+        "id": "e479ce8332aab31d8bac6ba9584cedbb",
+        "name": "Republic World",
+        "url": "https://www.republicworld.com",
+        "country": "in"
+      }
+    },
+    {
+      "id": "da63fe8eab4e8443fe50b418cf741220",
+      "title": "Best Crypto Presale Gains Attention as ARK Invest White Paper Reveals 34.6% of Bitcoin Faces Quantum Risk",
+      "description": "Explore the best crypto presale opportunities and why security and infrastructure are crucial for long-term investments.",
+      "content": "Share\nShare\nShare\nShare\nEmail\nWhat happens when one project breaks resistance and another faces existential questions about security? That tension is playing out right now. Bitcoin trades above $70,000 while PEPE stabilizes at $0.0000032 after its ex... [4764 chars]",
+      "url": "https://techbullion.com/best-crypto-presale-gains-attention-as-ark-invest-white-paper-reveals-34-6-of-bitcoin-faces-quantum-risk/",
+      "image": "https://techbullion.com/wp-content/uploads/2026/03/crypto_news_bigger-1000x600.png",
+      "publishedAt": "2026-03-13T23:12:51Z",
+      "lang": "en",
+      "source": {
+        "id": "c45dc51281d68ce51bff0cc4fe959bbf",
+        "name": "TechBullion",
+        "url": "https://techbullion.com",
+        "country": "gb"
+      }
+    },
+    {
+      "id": "1a22abe155889a55b37c681f76a5d88b",
+      "title": "XRP Ledger Validators Weigh Two Amendments as Votes Lag",
+      "description": "Two amendments for the XRP Ledger are up for validator votes, aiming to expand lending functions and vault infrastructure, but participation remains limited and activation targets risk falling short.",
+      "content": "The XRP Ledger is reviewing two proposed amendments that could expand lending functions and strengthen vault infrastructure. Validators have begun voting, yet early participation remains limited. Current results suggest the proposals still face signi... [3163 chars]",
+      "url": "https://www.cryptobreaking.com/xrp-ledger-validators-weigh-two/",
+      "image": "https://www.cryptobreaking.com/wp-content/uploads/2026/03/cb-458554-xrp-ledger-validators-weigh-two-amendments-as-votes-lag.jpg",
+      "publishedAt": "2026-03-13T17:32:32Z",
+      "lang": "en",
+      "source": {
+        "id": "03f4f74aaa0a44ccbb846a1630123293",
+        "name": "Crypto Breaking News",
+        "url": "https://www.cryptobreaking.com",
+        "country": "ae"
+      }
+    },
+    {
+      "id": "3891ca94f40ce1ebdfab7902ca4b5ba3",
+      "title": "US equity fund outflows extend to second week as Iran war sours sentiment",
+      "description": "U.S. equity funds were under selling pressure for a second straight week through March 11 as Iranian attacks ​on Middle East energy infrastructure and oil tankers increased ‌the risk of economic stagflation.",
+      "content": "March 13 (Reuters) - U.S. equity funds were under selling pressure for a second straight week through March 11 as Iranian attacks ​on Middle East energy infrastructure and oil tankers increased ‌the risk of economic stagflation.\nInvestors divested a ... [1365 chars]",
+      "url": "https://www.reuters.com/business/us-equity-fund-outflows-extend-second-week-iran-war-sours-sentiment-2026-03-13/",
+      "image": "https://www.reuters.com/resizer/v2/PYDY2TN23VJWDD4NUGAXYW4MAI.jpg?auth=a49585a4b91bc64e3c7a5a8ab1a3466208e4428eb18f002aecbc60580528e242&height=1005&width=1920&quality=80&smart=true",
+      "publishedAt": "2026-03-13T12:21:43Z",
+      "lang": "en",
+      "source": {
+        "id": "da5c26287bdd02563a2c32b55cb12051",
+        "name": "Reuters",
+        "url": "https://www.reuters.com",
+        "country": "us"
+      }
+    },
+    {
+      "id": "d94b7866d71d466790eab459af908442",
+      "title": "Israel-Lebanon Tensions Escalate: Infrastructure at Risk",
+      "description": "Israel has warned Lebanon of further infrastructure damage unless Hezbollah disarms, following Israeli military actions including the destruction of a bridge. As violence escalates, hundreds of thousands are displaced. The UN highlights the involuntary nature of Lebanon's involvement, with international concerns about Lebanese sovereignty increasing.",
+      "content": "Israel has issued a warning to Lebanon, vowing to inflict further damage on its infrastructure unless Hezbollah is disarmed, following an Israeli military action that destroyed a bridge in southern Lebanon. This marks the first destruction of infrast... [716 chars]",
+      "url": "https://www.devdiscourse.com/article/law-order/3837014-israel-lebanon-tensions-escalate-infrastructure-at-risk",
+      "image": "https://www.devdiscourse.com/remote.axd?https://devdiscourse.blob.core.windows.net/aiimagegallery/20_04_2025_13_45_18_6873064.png?width=920&format=jpeg",
+      "publishedAt": "2026-03-13T11:49:32Z",
+      "lang": "en",
+      "source": {
+        "id": "c6a01ba91c1a2bc3f53f4707110bfee5",
+        "name": "Devdiscourse",
+        "url": "https://www.devdiscourse.com",
+        "country": "in"
+      }
+    },
+    {
+      "id": "d34b06a9fb514d71b2d8a77da30fee08",
+      "title": "Middle East war risk: Iran threat to target US tech infrastructure in Gulf raises fears of global digital disruption",
+      "description": "International Business News: Escalating tensions in West Asia are casting a shadow over global technology networks, with experts warning that threats by Iranian forces to target U.",
+      "content": "Escalating tensions in West Asia are casting a shadow over global technology networks, with experts warning that threats by Iranian forces to target US-linked digital infrastructure in the Gulf could expose billions of dollars of investments to confl... [3769 chars]",
+      "url": "https://timesofindia.indiatimes.com/business/international-business/middle-east-war-risk-iran-threat-to-target-us-tech-infrastructure-in-gulf-raises-fears-of-global-digital-disruption/articleshow/129549510.cms",
+      "image": "https://static.toiimg.com/thumb/msid-129549873,width-1280,height-720,imgsize-788367,resizemode-6,overlay-toi_sw,pt-32,y_pad-600/photo.jpg",
+      "publishedAt": "2026-03-13T10:46:00Z",
+      "lang": "en",
+      "source": {
+        "id": "9a9a0fb79c70bbf499d39baca94921ae",
+        "name": "Times of India",
+        "url": "https://timesofindia.indiatimes.com",
+        "country": "in"
+      }
+    },
+    {
+      "id": "c6eaf5a3e75fb145124e82827d8be687",
+      "title": "KuCoin Launches Stock Index Perpetual Contracts, Expanding 24/7 Cross-Asset Access",
+      "description": "**media[971997]**PROVIDENCIALES, Turks and Caicos Islands, March 13, 2026 /PRNewswire/ -- KuCoin, a leading global crypto platform built on trust, today announced the launch of its Stock Index Perpetual Contracts, with the first batch of contracts scheduled for listing, including Tesla Index Perpetual Contract (TSLAUSDT) and MicroStrategy Index Perpetual Contract (MSTRUSDT). As traditional finance (TradFi) and crypto infrastructure continue to converge, the new product combines 24/7 trading, micro-contract entry from 1 USDT, and a risk control framework built on institutional-grade pricing, session-aware mark pricing, and EMA-based transition smoothing, offering eligible global users a more continuous, flexible, and risk-conscious tool for cross-asset allocation, while further expanding KuCoin's cross-market derivatives infrastructure under its Trust-First strategy.**media[971998]**",
+      "content": "PROVIDENCIALES, Turks and Caicos Islands, March 13, 2026 /PRNewswire/ -- KuCoin, a leading global crypto platform built on trust, today announced the launch of its Stock Index Perpetual Contracts, with the first batch of contracts scheduled for listi... [4533 chars]",
+      "url": "https://www.manilatimes.net/2026/03/13/tmt-newswire/pr-newswire/kucoin-launches-stock-index-perpetual-contracts-expanding-247-cross-asset-access/2299498",
+      "image": "https://www.manilatimes.net/manilatimes/uploads/images/2026/03/13/971995.jpg",
+      "publishedAt": "2026-03-13T10:31:40Z",
+      "lang": "en",
+      "source": {
+        "id": "7c666ee953f873d3057b310220f510df",
+        "name": "The Manila Times",
+        "url": "https://www.manilatimes.net",
+        "country": "ph"
+      }
+    },
+    {
+      "id": "225de9113118100f8e0c543c4102a7d1",
+      "title": "Zoomex Unveils Security and Risk Management Infrastructure Designed for Transparent and Reliable Crypto Trading",
+      "description": "Global cryptocurrency trading platform Zoomex has announced details of its security and risk management infrastructure, highlighting the systems designed to protect user assets, maintain operational stability, and support transparent trading outcomes in an increasingly scrutinized digital asset market. The announcement comes at a time when security architecture and risk monitoring systems have become central factors […]",
+      "content": "Share\nShare\nShare\nShare\nEmail\nGlobal cryptocurrency trading platform Zoomex has announced details of its security and risk management infrastructure, highlighting the systems designed to protect user assets, maintain operational stability, and suppor... [5944 chars]",
+      "url": "https://techbullion.com/zoomex-unveils-security-and-risk-management-infrastructure-designed-for-transparent-and-reliable-crypto-trading/",
+      "image": "https://techbullion.com/wp-content/uploads/2026/03/unknown-1-e1773395886268-1000x600.png",
+      "publishedAt": "2026-03-13T09:58:39Z",
+      "lang": "en",
+      "source": {
+        "id": "c45dc51281d68ce51bff0cc4fe959bbf",
+        "name": "TechBullion",
+        "url": "https://techbullion.com",
+        "country": "gb"
+      }
+    },
+    {
+      "id": "f8054a99a857bcada9a59129ce18e161",
+      "title": "US ambassador to Iraq warns citizens of 'risk of kidnapping'",
+      "description": "The US embassy in Baghdad has warned of a \"risk of kidnapping\" for its citizens in Iraq, as the Middle East war threatens American interests across the region. \"There have been attacks against U.S. citizens, U.S. interests, and critical infrastructure,\" it said, \"Americans also face risk of kidnapping.\"",
+      "content": "Synopsis\nThe US embassy in Baghdad has warned of a \"risk of kidnapping\" for its citizens in Iraq, as the Middle East war threatens American interests across the region. \"There have been attacks against U.S. citizens, U.S. interests, and critical infr... [843 chars]",
+      "url": "https://economictimes.indiatimes.com/news/international/world-news/us-ambassador-to-iraq-warns-citizens-of-risk-of-kidnapping/articleshow/129547629.cms",
+      "image": "https://img.etimg.com/thumb/msid-129547757,width-1200,height-630,imgsize-139636,overlay-economictimes/articleshow.jpg",
+      "publishedAt": "2026-03-13T09:47:00Z",
+      "lang": "en",
+      "source": {
+        "id": "5464668c1f0466950a0b2fab5249ec6c",
+        "name": "The Economic Times",
+        "url": "https://economictimes.indiatimes.com",
+        "country": "in"
+      }
+    }
+  ]
+}
